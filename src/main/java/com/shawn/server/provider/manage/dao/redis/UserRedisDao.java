@@ -136,7 +136,7 @@ public class UserRedisDao extends RedisGeneratorDao<String, User> {
 				byte[] name = serializer.serialize(JsonUtil.Object2JsonStr(user));
 				return connection.setNX(key, name);
 			}
-		}, false, true);
+		});
 
 		return result;
 	}
