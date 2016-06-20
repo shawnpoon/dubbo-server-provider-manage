@@ -27,4 +27,14 @@
 		<property name="connectionFactory" ref="connectionFactory" />
 	</bean>
 
+	<bean id="jedisPool" class="redis.clients.jedis.JedisPool">
+		<constructor-arg index="0" ref="poolConfig" />
+		<constructor-arg index="1" value="${redis.host}" />
+		<constructor-arg index="2" value="${redis.port}" />
+	</bean>
+
+	<bean id="redisManager" class="com.shawn.server.core.redis.RedisManager">
+		<property name="jedisPool" ref="jedisPool"></property>
+	</bean>
+
 </beans>

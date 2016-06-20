@@ -7,14 +7,35 @@
        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd
        http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd">
 
+	<!-- 安全管理器 -->
+	<bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+		<property name="sessionManager" ref="sessionManager" />
+		<property name="realm" ref="userRealm" />
+		<property name="cacheManager" ref="cacheManager" />
+		<property name="rememberMeManager" ref="rememberMeManager" />
+	</bean>
+
+	<!-- 会话管理器 -->
+	<bean id="sessionManager"
+		class="org.apache.shiro.web.session.mgt.DefaultWebSessionManager">
+		<property name="sessionDAO" ref="redisSessionDAO"></property>
+	</bean>
+
 	<!-- 缓存管理器 -->
-	<bean id="cacheManager" class="com.shawn.app.comment.cache.CacheManagerWrapper">
-		<property name="cacheManager" ref="springCacheManager" />
+	<bean id="cacheManager" class="com.shawn.server.core.shiro.RedisCacheManager">
+		<property name="redisManager" ref="redisManager" />
+	</bean>
+
+	<!-- 会话DAO -->
+	<!--redisSessionDAO继承实现了org.apache.shiro.session.mgt.eis.SessionDAO的AbstractSessionDAO -->
+	<bean id="redisSessionDAO" class="com.shawn.server.core.shiro.RedisSessionDAO">
+		<property name="redisManager" ref="redisManager"></property>
+		<property name="expire" value="1800"></property>
 	</bean>
 
 	<!-- 凭证匹配器 -->
 	<bean id="credentialsMatcher"
-		class="com.shawn.app.comment.utils.shiro.RetryLimitHashedCredentialsMatcher">
+		class="com.shawn.server.core.shiro.RetryLimitHashedCredentialsMatcher">
 		<constructor-arg ref="cacheManager" />
 		<property name="hashAlgorithmName" value="md5" />
 		<property name="hashIterations" value="2" />
@@ -22,26 +43,9 @@
 	</bean>
 
 	<!-- Realm实现 -->
-	<bean id="userRealm" class="com.shawn.app.comment.utils.shiro.UserRealm">
+	<bean id="userRealm" class="com.shawn.server.core.shiro.UserRealm">
 		<property name="credentialsMatcher" ref="credentialsMatcher" />
 		<property name="cachingEnabled" value="false" />
-	</bean>
-
-	<!-- 会话ID生成器 -->
-	<bean id="sessionIdGenerator"
-		class="org.apache.shiro.session.mgt.eis.JavaUuidSessionIdGenerator" />
-
-	<!-- 会话Cookie模板 -->
-	<bean id="sessionIdCookie" class="org.apache.shiro.web.servlet.SimpleCookie">
-		<constructor-arg value="sid" />
-		<property name="httpOnly" value="true" />
-		<property name="maxAge" value="-1" />
-	</bean>
-
-	<bean id="rememberMeCookie" class="org.apache.shiro.web.servlet.SimpleCookie">
-		<constructor-arg value="rememberMe" />
-		<property name="httpOnly" value="true" />
-		<property name="maxAge" value="2592000" /><!-- 30天 -->
 	</bean>
 
 	<!-- rememberMe管理器 -->
@@ -52,11 +56,10 @@
 		<property name="cookie" ref="rememberMeCookie" />
 	</bean>
 
-	<!-- 会话DAO -->
-	<bean id="sessionDAO"
-		class="org.apache.shiro.session.mgt.eis.EnterpriseCacheSessionDAO">
-		<property name="activeSessionsCacheName" value="shiro-activeSessionCache" />
-		<property name="sessionIdGenerator" ref="sessionIdGenerator" />
+	<bean id="rememberMeCookie" class="org.apache.shiro.web.servlet.SimpleCookie">
+		<constructor-arg value="rememberMe" />
+		<property name="httpOnly" value="true" />
+		<property name="maxAge" value="2592000" /><!-- 30天 -->
 	</bean>
 
 	<!-- 会话验证调度器 -->
@@ -64,26 +67,6 @@
 		class="org.apache.shiro.session.mgt.quartz.QuartzSessionValidationScheduler">
 		<property name="sessionValidationInterval" value="1800000" />
 		<property name="sessionManager" ref="sessionManager" />
-	</bean>
-
-	<!-- 会话管理器 -->
-	<bean id="sessionManager"
-		class="org.apache.shiro.web.session.mgt.DefaultWebSessionManager">
-		<property name="globalSessionTimeout" value="1800000" />
-		<property name="deleteInvalidSessions" value="true" />
-		<property name="sessionValidationSchedulerEnabled" value="true" />
-		<property name="sessionValidationScheduler" ref="sessionValidationScheduler" />
-		<property name="sessionDAO" ref="sessionDAO" />
-		<property name="sessionIdCookieEnabled" value="true" />
-		<property name="sessionIdCookie" ref="sessionIdCookie" />
-	</bean>
-
-	<!-- 安全管理器 -->
-	<bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
-		<property name="realm" ref="userRealm" />
-		<property name="sessionManager" ref="sessionManager" />
-		<property name="cacheManager" ref="cacheManager" />
-		<property name="rememberMeManager" ref="rememberMeManager" />
 	</bean>
 
 	<!-- 相当于调用SecurityUtils.setSecurityManager(securityManager) -->
@@ -94,21 +77,16 @@
 		<property name="arguments" ref="securityManager" />
 	</bean>
 
-	<!-- 基于Form表单的身份验证过滤器 -->
-	<bean id="formAuthenticationFilter" class="com.shawn.app.comment.utils.shiro.filter.MyFormAuthenticationFilter">
-		<property name="usernameParam" value="username" />
-		<property name="passwordParam" value="password" />
-		<property name="rememberMeParam" value="rememberMe" />
-		<property name="loginUrl" value="/login" />
-	</bean>
-
 	<!-- Shiro的Web过滤器 -->
 	<bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
 		<property name="securityManager" ref="securityManager" />
 		<property name="loginUrl" value="/login" />
 		<property name="filters">
 			<util:map>
-				<entry key="authc" value-ref="formAuthenticationFilter" />
+				<entry key="authc">
+					<bean
+						class="org.apache.shiro.web.filter.authc.PassThruAuthenticationFilter" />
+				</entry>
 			</util:map>
 		</property>
 		<property name="filterChainDefinitions">
@@ -120,10 +98,7 @@
 
 	<!-- Shiro生命周期处理器 -->
 	<bean id="lifecycleBeanPostProcessor" class="org.apache.shiro.spring.LifecycleBeanPostProcessor" />
-	<!-- <bean class="org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator"></bean> 
-		<bean class="org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor"> 
-		<property name="securityManager" ref="securityManager"></property> </bean> 
-	-->
+
 	<bean
 		class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
 		<property name="exceptionMappings">
