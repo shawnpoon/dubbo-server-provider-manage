@@ -21,6 +21,7 @@ public class AccountManagerImpl implements AccountManager<AuthenticationUser> {
 	public AuthenticationUser findByUsername(String username) {
 		AuthenticationUser user = new AuthenticationUser();
 		user.setUsername(username);
+		user.setPassword("1234");
 		user.setState(0);
 		return user;
 	}
