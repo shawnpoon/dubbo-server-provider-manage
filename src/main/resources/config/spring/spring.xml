@@ -32,6 +32,7 @@
 	<!-- 官方注释：扫描注解包路径，多个包用逗号分隔，不填pacakge表示扫描当前ApplicationContext中所有的类。 测试发现：此处package不填写包名会无法注册Service，扫描全包需填写包首即可或者填写至类的上一级目录。 -->
 	<dubbo:annotation package="com.shawn" />
 
+	<import resource="spring-database.xml"/>
 	<import resource="spring-redis.xml" />
 	<import resource="spring-shiro.xml" />
 	<import resource="spring-dao.xml" />
