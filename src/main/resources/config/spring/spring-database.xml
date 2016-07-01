@@ -17,8 +17,6 @@
            				http://code.alibabatech.com/schema/dubbo          
     					http://code.alibabatech.com/schema/dubbo/dubbo.xsd">
 
-	<context:property-placeholder location="classpath:jdbc.properties" />
-
 	<bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource"
 		init-method="init" destroy-method="close">
 

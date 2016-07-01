@@ -9,8 +9,6 @@
                         				http://www.springframework.org/schema/tx 
            								http://www.springframework.org/schema/tx/spring-tx-4.0.xsd">
 
-	<context:property-placeholder location="classpath:redis.properties" />
-
 	<bean id="poolConfig" class="redis.clients.jedis.JedisPoolConfig">
 		<property name="maxIdle" value="${redis.maxIdle}" />
 		<property name="maxActive" value="${redis.maxActive}" />
